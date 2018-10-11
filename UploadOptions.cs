@@ -1,17 +1,32 @@
+using System.Reflection;
 using CommandLine;
 using CommandLine.Text;
 
 namespace PneumaticTube
 {
-    internal class UploadOptions
+	internal class UploadOptions
     {
-        [Option('f', "file", Required = true, HelpText = "The location of the file to upload")]
+	    private string _dropboxPath;
+
+	    [Option('f', "file", Required = true, HelpText = "The location of the file to upload")]
         public string LocalPath { get; set; }
 
-        [Option('p', "path", Required = true, HelpText = "The destination path in Dropbox")]
-        public string DropboxPath { get; set; }
+	    [Option('p', "path", Required = true, HelpText = "The destination path in Dropbox")]
+	    public string DropboxPath
+	    {
+		    get { return _dropboxPath; }
+		    set
+		    {
+				if (!value.StartsWith("/"))
+				{
+					value = $"/{value}";
+				}
 
-        [Option('r', "reset", Required = false, HelpText = "Force PneumaticTube to re-authorize with Dropbox")]
+				_dropboxPath = value;
+		    }
+	    }
+
+	    [Option('r', "reset", Required = false, HelpText = "Force PneumaticTube to re-authorize with Dropbox")]
         public bool Reset { get; set; }
 
         [Option('b', "bytes", Required = false,
@@ -24,8 +39,7 @@ namespace PneumaticTube
         [Option('q', "quiet", Required = false, HelpText = "Suppress all output")]
         public bool Quiet { get; set; }
 
-        [Option('n', "noprogress", Required = false, HelpText = "Suppress progress output when using chunked uploading")
-        ]
+        [Option('n', "noprogress", Required = false, HelpText = "Suppress progress output when using chunked uploading")]
         public bool NoProgress { get; set; }
 
         public string GetUsage()
@@ -35,10 +49,21 @@ namespace PneumaticTube
                 AddDashesToOption = true
             };
 
-            help.AddPreOptionsLine("pneumatictube -f <file> -p <path>");
+			help.AddPreOptionsLine(GetVersionInfo());
+			help.AddPreOptionsLine("");
+			help.AddPreOptionsLine("pneumatictube -f <file> -p <path>");
             help.AddOptions(this);
 
             return help.ToString();
         }
-    }
+
+		private static string GetVersionInfo()
+		{
+			var assembly = typeof(UploadOptions).GetTypeInfo().Assembly;
+			var assemblyName = new AssemblyName(assembly.FullName);
+			var ver = assemblyName.FullName.Split('=')[1].Split(',')[0];
+
+			return $"PneumaticTube version {ver}";
+		}
+	}
 }
